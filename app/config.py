@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     app_host: str = "127.0.0.1"
     app_port: int = 8000
     debug: bool = True
+    database_url: str = 'postgresql+psycopg2://postgres:postgres@localhost:5432/cloud_application'
 
     model_config = SettingsConfigDict(
         env_file=".env",
