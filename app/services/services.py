@@ -1,6 +1,13 @@
 from app.data.services import services_data
 from app.schemas.services import ServiceCreate
 
+def get_services_by_status(status: str):
+    return [
+        service
+        for service in services_data
+        if service["status"] == status
+    ]
+
 def get_all_services():
     return services_data
 
