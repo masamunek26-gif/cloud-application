@@ -18,5 +18,9 @@ class Service(Base):
     name: Mapped[str] = mapped_column(String(100))
     type_id: Mapped[int] = mapped_column(ForeignKey("service_types.id"))
     status: Mapped[str] = mapped_column(String(20))
+    
+    # Новые поля для ЛР № 16
+    description: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    endpoint_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     service_type: Mapped["ServiceType"] = relationship(back_populates="services")
