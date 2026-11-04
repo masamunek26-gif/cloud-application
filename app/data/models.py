@@ -7,7 +7,26 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.data.database import Base
+from datetime import datetime
+from sqlalchemy import BigInteger, DateTime, func
 
+class StoredObject(Base):
+    __tablename__ = "stored_objects"
+    __table_args__ = (
+        UniqueConstraint("storage_name", name="uq_stored_objects_storage_name"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    original_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    storage_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    storage_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
 class ServiceType(Base):
     __tablename__ = "service_types"
     __table_args__ = (

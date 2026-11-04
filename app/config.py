@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     app_port: int = 8000
     debug: bool = True
     database_url: str = 'postgresql+psycopg2://postgres:postgres@localhost:5432/cloud_application'
+    storage_path: str = "storage/objects"  # <-- добавь эту строчку
 
     model_config = SettingsConfigDict(
         env_file=".env",

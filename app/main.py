@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from app.config import settings
 from app.routers.services import router as services_router
 from app.routers.system import router as system_router
-
+from app.routers.objects import router as objects_router
 # Метаданные тегов для документации OpenAPI
 tags_metadata = [
     {
@@ -25,3 +25,4 @@ app = FastAPI(
 # Подключение модулей маршрутизации (роутеров)
 app.include_router(services_router)
 app.include_router(system_router)
+app.include_router(objects_router)
