@@ -1,7 +1,7 @@
 from uuid import uuid4
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from app.data.models import AuthSession, User
+from app.data.models import AuthSession, Role, User
 from app.schemas.auth import LoginRequest, UserRegister
 
 def get_user_by_username(db: Session, username: str):
@@ -12,9 +12,14 @@ def register_user(db: Session, user_data: UserRegister):
     existing_user = get_user_by_username(db, user_data.username)
     if existing_user is not None:
         return None
+    
+    # Ищем роль по умолчанию ("viewer")
+    default_role = db.scalar(select(Role).where(Role.name == "viewer"))
+    
     user = User(
         username=user_data.username,
-        password=user_data.password
+        password=user_data.password,
+        role_id=default_role.id if default_role else None
     )
     db.add(user)
     db.commit()

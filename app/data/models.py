@@ -1,32 +1,27 @@
+from datetime import datetime
 from sqlalchemy import (
+    BigInteger,
     CheckConstraint,
+    Column,
+    DateTime,
     ForeignKey,
     Integer,
     String,
-    UniqueConstraint
+    Table,
+    UniqueConstraint,
+    func
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.data.database import Base
-from datetime import datetime
-from sqlalchemy import BigInteger, DateTime, func
 
-class StoredObject(Base):
-    __tablename__ = "stored_objects"
-    __table_args__ = (
-        UniqueConstraint("storage_name", name="uq_stored_objects_storage_name"),
-    )
+# Промежуточная таблица M:N для ролей и разрешений
+role_permissions = Table(
+    "role_permissions",
+    Base.metadata,
+    Column("role_id", ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
+    Column("permission_id", ForeignKey("permissions.id", ondelete="CASCADE"), primary_key=True)
+)
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    original_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    storage_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    storage_path: Mapped[str] = mapped_column(String(500), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        nullable=False
-    )
 class ServiceType(Base):
     __tablename__ = "service_types"
     __table_args__ = (
@@ -57,6 +52,55 @@ class Service(Base):
 
     service_type: Mapped["ServiceType"] = relationship(back_populates="services")
 
+class StoredObject(Base):
+    __tablename__ = "stored_objects"
+    __table_args__ = (
+        UniqueConstraint("storage_name", name="uq_stored_objects_storage_name"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    original_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    storage_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    storage_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+
+class Permission(Base):
+    __tablename__ = "permissions"
+    __table_args__ = (
+        UniqueConstraint("code", name="uq_permissions_code"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    roles: Mapped[list["Role"]] = relationship(
+        secondary=role_permissions,
+        back_populates="permissions"
+    )
+
+class Role(Base):
+    __tablename__ = "roles"
+    __table_args__ = (
+        UniqueConstraint("name", name="uq_roles_name"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(50), nullable=False)
+    description: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    permissions: Mapped[list["Permission"]] = relationship(
+        secondary=role_permissions,
+        back_populates="roles"
+    )
+    users: Mapped[list["User"]] = relationship(back_populates="role")
+
 class User(Base):
     __tablename__ = "users"
     __table_args__ = (
@@ -71,7 +115,9 @@ class User(Base):
         server_default=func.now(),
         nullable=False
     )
+    role_id: Mapped[int | None] = mapped_column(ForeignKey("roles.id"), nullable=True)
 
+    role: Mapped["Role | None"] = relationship(back_populates="users")
     sessions: Mapped[list["AuthSession"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan"
