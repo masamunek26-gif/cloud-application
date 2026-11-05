@@ -1,3 +1,5 @@
+from urllib.parse import quote_plus
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -11,10 +13,19 @@ class Settings(BaseSettings):
     app_host: str = "127.0.0.1"
     app_port: int = 8000
     debug: bool = True
-    database_url: str = 'postgresql+psycopg2://postgres:postgres@localhost:5432/cloud_application'
+
+    # База данных
+    db_host: str = "localhost"
+    db_port: int = 5432
+    db_name: str = "cloud_application"
+    db_user: str = "postgres"
+    lab_db_password: SecretStr
+    auth_secret: SecretStr
+
+    # Хранилище объектов
     storage_path: str = "storage/objects"
 
-    # Параметры для настройки HTTPS (добавлены в ЛР № 23)
+    # Параметры HTTPS
     https_enabled: bool = False
     https_port: int = 8443
     ssl_certfile: str | None = None
@@ -23,8 +34,20 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        case_sensitive=False,
+        secrets_dir="secrets",
         extra="ignore"
     )
+
+    @property
+    def database_url(self) -> str:
+        password = quote_plus(self.lab_db_password.get_secret_value())
+        return (
+            "postgresql+psycopg2://"
+            f"{self.db_user}:"
+            f"{password}@"
+            f"{self.db_host}:"
+            f"{self.db_port}/"
+            f"{self.db_name}"
+        )
 
 settings = Settings()
