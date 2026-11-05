@@ -1,3 +1,9 @@
+import sys
+from pathlib import Path
+
+# Добавляем корень проекта в путь поиска модулей Python
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
 from app.data.database import SessionLocal
 from app.services.access import assign_default_roles, initialize_access_model
 
