@@ -6,3 +6,4 @@ __pycache__/
 storage/
 certs/*.pem
 secrets/
+.venv-check/
