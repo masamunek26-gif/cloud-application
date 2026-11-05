@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.orm import Session
 from app.data.database import get_db
+from app.data.models import User
 from app.schemas.services import ServiceCreate
+from app.security import require_permission
 from app.services.services import (
     create_service,
     delete_service,
@@ -13,13 +15,17 @@ from app.services.services import (
 router = APIRouter(prefix="/services", tags=["Services"])
 
 @router.get("", summary="Получить список сервисов")
-def read_services(db: Session = Depends(get_db)):
+def read_services(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("services.read"))
+):
     return get_all_services(db)
 
 @router.get("/{service_id}", summary="Получить сервис по идентификатору")
 def read_service(
     service_id: int = Path(..., gt=0),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("services.read"))
 ):
     service = get_service_by_id(db, service_id)
     if service is None:
@@ -29,7 +35,8 @@ def read_service(
 @router.post("", summary="Создать новый сервис", status_code=201)
 def create_service_endpoint(
     service: ServiceCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("services.write"))
 ):
     created_service = create_service(db, service)
     if created_service is None:
@@ -40,7 +47,8 @@ def create_service_endpoint(
 def update_service_endpoint(
     service_id: int,
     service: ServiceCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("services.write"))
 ):
     updated_service = update_service(db, service_id, service)
     if updated_service is None:
@@ -50,7 +58,8 @@ def update_service_endpoint(
 @router.delete("/{service_id}", summary="Удалить сервис")
 def delete_service_endpoint(
     service_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("services.write"))
 ):
     deleted = delete_service(db, service_id)
     if not deleted:

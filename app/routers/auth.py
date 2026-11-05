@@ -1,3 +1,5 @@
+from app.data.models import User
+from app.security import get_current_user
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.data.database import get_db
@@ -16,6 +18,14 @@ from app.services.auth import (
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+@router.get("/me", summary="Получить текущего пользователя")
+def read_current_user(current_user: User = Depends(get_current_user)):
+    return {
+        "id": current_user.id,
+        "username": current_user.username,
+        "role": current_user.role.name if current_user.role else None
+    }
 
 @router.post("/register", response_model=UserResponse, status_code=201, summary="Зарегистрировать пользователя")
 def register(user_data: UserRegister, db: Session = Depends(get_db)):
