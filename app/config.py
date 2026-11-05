@@ -12,7 +12,13 @@ class Settings(BaseSettings):
     app_port: int = 8000
     debug: bool = True
     database_url: str = 'postgresql+psycopg2://postgres:postgres@localhost:5432/cloud_application'
-    storage_path: str = "storage/objects"  # <-- добавь эту строчку
+    storage_path: str = "storage/objects"
+
+    # Параметры для настройки HTTPS (добавлены в ЛР № 23)
+    https_enabled: bool = False
+    https_port: int = 8443
+    ssl_certfile: str | None = None
+    ssl_keyfile: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
