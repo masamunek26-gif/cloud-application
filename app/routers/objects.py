@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.data.database import get_db
 from app.data.models import User
 from app.schemas.objects import StoredObjectResponse
-from app.security import require_permission
+from app.security.authorization import get_current_user, require_permission
 from app.services.objects import (
     delete_object,
     get_object,

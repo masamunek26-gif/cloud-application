@@ -3,6 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.data.models import AuthSession, Role, User
 from app.schemas.auth import LoginRequest, UserRegister
+from app.security.passwords import hash_password, verify_password
 
 def get_user_by_username(db: Session, username: str):
     statement = select(User).where(User.username == username)
@@ -12,13 +13,10 @@ def register_user(db: Session, user_data: UserRegister):
     existing_user = get_user_by_username(db, user_data.username)
     if existing_user is not None:
         return None
-    
-    # Ищем роль по умолчанию ("viewer")
     default_role = db.scalar(select(Role).where(Role.name == "viewer"))
-    
     user = User(
         username=user_data.username,
-        password=user_data.password,
+        password_hash=hash_password(user_data.password),
         role_id=default_role.id if default_role else None
     )
     db.add(user)
@@ -28,9 +26,10 @@ def register_user(db: Session, user_data: UserRegister):
 
 def authenticate_user(db: Session, login_data: LoginRequest):
     user = get_user_by_username(db, login_data.username)
-    if user is None or user.password != login_data.password:
+    if user is None:
         return None
-    
+    if not verify_password(login_data.password, user.password_hash):
+        return None
     token = uuid4().hex
     session = AuthSession(token=token, user_id=user.id)
     db.add(session)

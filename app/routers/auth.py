@@ -1,5 +1,5 @@
 from app.data.models import User
-from app.security import get_current_user
+from app.security.authorization import get_current_user, require_permission
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.data.database import get_db
