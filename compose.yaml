@@ -1,78 +1,58 @@
 services:
   db:
-    image: postgres:18
+    image: postgres:18-alpine
     environment:
-      POSTGRES_DB: cloud_application
+      POSTGRES_DB: cloud_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD_FILE: /run/secrets/lab_db_password
     secrets:
       - lab_db_password
     volumes:
       - postgres_data:/var/lib/postgresql
-      - ./docker/postgres:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d cloud_application"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
     networks:
       - cloud-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   migrate:
-    image: cloud-application:0.1
-    env_file:
-      - .env
+    image: cloud-application:0.4
+    command: alembic upgrade head
     environment:
       DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: cloud_application
-      DB_USER: postgres
-      HTTPS_ENABLED: "false"
     secrets:
-      - source: lab_db_password
-        target: /app/secrets/lab_db_password
-      - source: auth_secret
-        target: /app/secrets/auth_secret
+      - lab_db_password
+      - auth_secret
     depends_on:
       db:
         condition: service_healthy
-    command:
-      - sh
-      - -c
-      - >
-        alembic upgrade head &&
-        python -c "from app.data.database import SessionLocal;
-        from app.services.access import initialize_access_model, assign_default_roles;
-        db = SessionLocal();
-        initialize_access_model(db);
-        assign_default_roles(db);
-        db.close()"
+    volumes:
+      - ./migrations:/app/migrations
     networks:
       - cloud-network
 
   app:
-    image: cloud-application:0.1
-    env_file:
-      - .env
-    environment:
-      APP_HOST: 0.0.0.0
-      APP_PORT: 8000
-      HTTPS_ENABLED: "false"
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: cloud_application
-      DB_USER: postgres
+    image: cloud-application:0.4
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     ports:
-      - "127.0.0.1:8080:8000"
+      - "8080:8000"
+    environment:
+      DB_HOST: db
+      NOTIFICATION_SERVICE_URL: "http://notification:9000"
     secrets:
-      - source: lab_db_password
-        target: /app/secrets/lab_db_password
-      - source: auth_secret
-        target: /app/secrets/auth_secret
+      - lab_db_password
+      - auth_secret
     depends_on:
       migrate:
         condition: service_completed_successfully
+    networks:
+      - cloud-network
+
+  notification:
+    image: cloud-application:0.4
+    command: uvicorn app.notification_service.main:app --host 0.0.0.0 --port 9000
     networks:
       - cloud-network
 

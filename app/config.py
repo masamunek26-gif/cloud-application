@@ -1,14 +1,15 @@
+import os
 from urllib.parse import quote_plus
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Автоматически определяем путь к секретам: в Docker это /run/secrets, локально — папка secrets
+default_secrets_dir = "/run/secrets" if os.path.exists("/run/secrets") else "secrets"
+
 class Settings(BaseSettings):
     app_name: str = "Cloud Application"
     app_version: str = "1.0"
-    app_description: str = (
-        "Учебное серверное приложение для изучения "
-        "разработки программного обеспечения облачных систем."
-    )
+    app_description: str = "Учебное серверное приложение для облачных систем."
     app_env: str = "development"
     app_host: str = "127.0.0.1"
     app_port: int = 8000
@@ -17,7 +18,7 @@ class Settings(BaseSettings):
     # База данных
     db_host: str = "localhost"
     db_port: int = 5432
-    db_name: str = "cloud_application"
+    db_name: str = "cloud_db"  # Должно совпадать с POSTGRES_DB в compose.yaml
     db_user: str = "postgres"
     lab_db_password: SecretStr
     auth_secret: SecretStr
@@ -25,16 +26,16 @@ class Settings(BaseSettings):
     # Хранилище объектов
     storage_path: str = "storage/objects"
 
-    # Параметры HTTPS
-    https_enabled: bool = False
-    https_port: int = 8443
-    ssl_certfile: str | None = None
-    ssl_keyfile: str | None = None
+    # Параметры интеграции с Notification Service
+    notification_service_url: str = "http://localhost:9000"
+    notification_timeout_seconds: float = 3.0
+    notification_max_attempts: int = 3
+    notification_retry_delay_seconds: float = 0.5
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        secrets_dir="secrets",
+        secrets_dir=default_secrets_dir,
         extra="ignore"
     )
 

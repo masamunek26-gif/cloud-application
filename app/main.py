@@ -5,6 +5,7 @@ from app.routers.system import router as system_router
 from app.routers.objects import router as objects_router
 from app.routers.auth import router as auth_router
 from app.routers.access import router as access_router
+from app.routers import integration
 
 # Метаданные тегов для документации OpenAPI
 tags_metadata = [
@@ -31,3 +32,4 @@ app.include_router(system_router)
 app.include_router(objects_router)
 app.include_router(auth_router)
 app.include_router(access_router)
+app.include_router(integration.router)
